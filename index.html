@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>System of a Fragment: Interactive Learning Resource</title>
+
+   <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        color: #222;
+    }
+
+    header {
+        padding: 20px;
+        background: #222;
+        color: white;
+    }
+.description {
+    width: 100%;
+    margin-top: 8px;
+    color: white;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.description p {
+    margin: 0 0 7px 0;
+}
+
+.description p:last-child {
+    margin-bottom: 0;
+}
+    header h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .page {
+    display: grid;
+    grid-template-columns: 33.333% 1fr;
+    min-height: calc(100vh - 68px);
+    }
+
+
+    /* =========================
+       LEFT SIDE - CLIP LIST
+    ========================= */
+
+    .clip-panel {
+        background: white;
+        border-right: 1px solid #ccc;
+        padding: 15px;
+
+        height: calc(100vh - 68px);
+        overflow-y: auto;
+    }
+
+    .clip-panel h2 {
+        margin-top: 0;
+        font-size: 18px;
+    }
+
+    .clip-list-wrapper {
+        position: relative;
+    }
+
+    #clip-list {
+        position: relative;
+        padding-left: 180px;
+    }
+
+    .clip-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .clip {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        width: 100%;
+        padding: 8px;
+
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .clip:hover {
+        background: #e9e9e9;
+    }
+
+    .clip.selected {
+        border: 2px solid #333;
+        background: #e0e0e0;
+    }
+
+    .clip-thumbnail {
+        width: 90px;
+        height: 55px;
+
+        object-fit: cover;
+
+        background: #ccc;
+        border-radius: 4px;
+    }
+
+    .clip-title {
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+
+    /* =========================
+       SERIES BRACKETS
+    ========================= */
+
+    .bracket-layer {
+        position: absolute;
+        left: 0;
+        top: 0;
+
+        width: 170px;
+
+        pointer-events: none;
+    }
+
+    .series-bracket {
+        position: absolute;
+
+        width: 170px;
+
+        border-right: 2px solid #555;
+    }
+
+    .series-bracket::before,
+    .series-bracket::after {
+        content: "";
+
+        position: absolute;
+        right: 0;
+
+        width: 12px;
+
+        border-top: 2px solid #555;
+    }
+
+    .series-bracket::before {
+        top: 0;
+    }
+
+    .series-bracket::after {
+        bottom: 0;
+    }
+
+    .series-label {
+        position: absolute;
+
+        right: 18px;
+        top: 50%;
+
+        transform: translateY(-50%);
+
+        background: white;
+
+        padding: 3px 5px;
+
+        font-size: 12px;
+        font-weight: bold;
+
+        white-space: nowrap;
+    }
+
+
+    /* =========================
+       RIGHT SIDE - VIDEO AREA
+    ========================= */
+
+    .video-area {
+        padding: 20px;
+    }
+
+    .controls {
+        display: flex;
+        gap: 10px;
+
+        margin-bottom: 20px;
+
+        flex-wrap: wrap;
+    }
+
+    .controls button {
+        padding: 10px 16px;
+
+        border: 1px solid #aaa;
+        border-radius: 5px;
+
+        background: white;
+
+        cursor: pointer;
+
+        font-size: 14px;
+    }
+
+    .controls button:hover {
+        background: #eee;
+    }
+
+    .controls button.active {
+        background: #222;
+        color: white;
+    }
+
+    .player-container {
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+    }
+
+    .player-container.compare {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .player {
+        background: #000;
+
+        border-radius: 6px;
+
+        overflow: hidden;
+    }
+
+    .player video {
+        display: block;
+
+        width: 100%;
+        height: auto;
+    }
+
+    .player-label {
+        padding: 8px 12px;
+
+        background: #222;
+
+        color: white;
+
+        font-size: 14px;
+    }
+
+    .instructions {
+        margin-top: 20px;
+
+        color: #666;
+
+        font-size: 14px;
+    }
+
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-width: 800px) {
+
+        .page {
+            grid-template-columns: 1fr;
+        }
+
+        .clip-panel {
+            border-right: none;
+
+            border-bottom: 1px solid #ccc;
+
+            height: auto;
+            max-height: 300px;
+        }
+
+        .player-container.compare {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+</style>
+</head>
+
+
+<body>
+
+    <header>
+        <h1>System of a Fragment: Interactive Learning Resource</h1>
+        <div class="description">
+        <p>
+            This is an interactive learning resource designed to aid readers
+            of Raymond Bellour’s “System of a Fragment: <em>The Birds</em>.”
+            Bellour’s text was first published as “‘Les Oiseaux’ : analyse
+            d’une séquence,” <em>Cahiers du cinéma</em> 216 (1969): 24-39.
+            It was later amended, translated, and republished as
+            “System of a Fragment: <em>The Birds</em>,” translated by
+            Ben Brewster, in <em>The Analysis of Film</em>, edited by
+            Constance Penley (Indiana University Press, 2001). The resource
+            has been designed with the 2001 text as its reference.
+        </p>
+
+        <p>
+            The film clips presented here are used solely for educational
+            purposes and in accordance with the educational exception under
+            Article 16 of the Dutch Copyright Act (Auteurswet). All copyright
+            and related rights remain with their respective rights holders.
+        </p>
+
+        <p>
+            This resource was designed by Dr. Jacob Engelberg. 
+        </p>
+    </div>
+
+    </header>
+    <div class="page">
+
+        <!-- =========================
+             LEFT: CLIP LIST
+        ========================== -->
+
+        <aside class="clip-panel">
+
+            <h2>Shots</h2>
+
+            <div class="clip-list-wrapper">
+
+    <div id="clip-list"></div>
+
+    <div
+        id="bracket-layer"
+        class="bracket-layer">
+    </div>
+
+</div>
+
+        </aside>
+
+
+        <!-- =========================
+             RIGHT: VIDEO PLAYERS
+        ========================== -->
+
+        <main class="video-area">
+
+            <div class="controls">
+
+                <button
+                    id="single-button"
+                    class="active"
+                    type="button">
+                    Single Shot
+                </button>
+
+                <button
+                    id="compare-button"
+                    type="button">
+                    Compare Two Shots
+                </button>
+
+                <button
+                    id="player1-button"
+                    class="active"
+                    type="button">
+                    Select Player 1
+                </button>
+
+                <button
+                    id="player2-button"
+                    type="button">
+                    Select Player 2
+                </button>
+
+            </div>
+
+
+            <div
+                id="player-container"
+                class="player-container">
+
+
+                <!-- PLAYER 1 -->
+
+                <div class="player">
+
+                    <div class="player-label">
+                        Player 1
+                    </div>
+
+                    <video
+                        id="video1"
+                        controls loop>
+                    </video>
+
+                </div>
+
+
+                <!-- PLAYER 2 -->
+
+                <div
+                    id="player2"
+                    class="player"
+                    style="display: none;">
+
+                    <div class="player-label">
+                        Player 2
+                    </div>
+
+                    <video
+                        id="video2"
+                        controls loop>
+                    </video>
+
+                </div>
+
+            </div>
+
+
+            <div class="instructions">
+                Select a clip from the list to play it.
+                In compare mode, select Player 1 or Player 2
+                before choosing a clip.
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script>
+
+        /*
+        ============================================
+        CLIP DATA
+        ============================================
+
+        This is where your 81 clips are defined.
+
+        For now, we automatically create clips
+        numbered 1 through 81.
+
+        Later, you can give them proper names and
+        point them to your actual video files.
+        */
+
+        const clips = [];
+
+      for (let i = 3; i <= 84; i++) {
+
+    const number = String(i).padStart(2, "0");
+
+    clips.push({
+        id: i,
+        title: "Shot " + i,
+        video: "clips/shot" + i + ".mp4",
+        thumbnail: "thumbnails/shot" + i + ".jpg"
+    });
+
+}
+
+
+        /*
+        ============================================
+        VARIABLES
+        ============================================
+        */
+
+        let comparisonMode = false;
+
+        let selectedPlayer = 1;
+
+
+        const clipList = document.getElementById("clip-list");
+
+        const video1 = document.getElementById("video1");
+
+        const video2 = document.getElementById("video2");
+
+        const player2 = document.getElementById("player2");
+
+        const playerContainer =
+            document.getElementById("player-container");
+
+        const singleButton =
+            document.getElementById("single-button");
+
+        const compareButton =
+            document.getElementById("compare-button");
+
+        const player1Button =
+            document.getElementById("player1-button");
+
+        const player2Button =
+            document.getElementById("player2-button");
+
+
+        /*
+        ============================================
+        CREATE THE 81 CLIP BUTTONS
+        ============================================
+        */
+
+        /*
+============================================
+SERIES DEFINITIONS
+============================================
+*/
+
+const series = [
+    { start: 3,  end: 12, label: "Departure" },
+    { start: 12, end: 14, label: "(A0)" },
+    { start: 15, end: 24, label: "A1" },
+    { start: 25, end: 31, label: "A2" },
+    { start: 32, end: 36, label: "A3 (Center A)" },
+    { start: 37, end: 43, label: "A4" },
+    { start: 44, end: 56, label: "A5-B1" },
+    { start: 56, end: 60, label: "B2 (Center B)" },
+    { start: 60, end: 71, label: "B3" },
+    { start: 72, end: 84, label: "Arrival" }
+];
+
+
+/*
+============================================
+CREATE SHOT LIST
+============================================
+*/
+
+const clipRow = document.createElement("div");
+
+clipRow.className = "clip-row";
+
+clips.forEach(function(clip) {
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "clip";
+
+    button.innerHTML = `
+        <img
+            class="clip-thumbnail"
+            src="${clip.thumbnail}"
+            alt="${clip.title} thumbnail"
+            onerror="this.style.visibility='hidden'">
+
+        <span class="clip-title">
+            ${clip.title}
+        </span>
+    `;
+
+    button.addEventListener("click", function() {
+        playClip(clip);
+    });
+
+    clipRow.appendChild(button);
+
+});
+
+clipList.appendChild(clipRow);
+
+
+/*
+============================================
+CREATE OVERLAPPING BRACKETS
+============================================
+*/
+
+const bracketLayer =
+    document.getElementById("bracket-layer");
+
+function createBrackets() {
+
+    bracketLayer.innerHTML = "";
+
+    const shotButtons =
+        clipRow.querySelectorAll(".clip");
+
+    series.forEach(function(item, index) {
+
+        const firstIndex = item.start - 3;
+        const lastIndex = item.end - 3;
+
+        const firstShot = shotButtons[firstIndex];
+        const lastShot = shotButtons[lastIndex];
+
+        if (!firstShot || !lastShot) {
+            return;
+        }
+
+        const top =
+            firstShot.offsetTop;
+
+        const bottom =
+            lastShot.offsetTop +
+            lastShot.offsetHeight;
+
+        const bracket =
+            document.createElement("div");
+
+        bracket.className = "series-bracket";
+
+        /*
+        Move each overlapping bracket slightly
+        to the left so they remain visible.
+        */
+
+        bracket.style.left =
+    Math.max(-index * 14, -150) + "px";
+
+        bracket.style.top =
+            top + "px";
+
+        bracket.style.height =
+            (bottom - top) + "px";
+
+        const label =
+            document.createElement("div");
+
+        label.className = "series-label";
+
+        label.textContent =
+            item.label;
+
+        bracket.appendChild(label);
+
+        bracketLayer.appendChild(bracket);
+
+    });
+
+}
+
+
+/*
+Create brackets after the page has rendered.
+*/
+
+setTimeout(createBrackets, 0);
+
+
+/*
+Recalculate them if the window changes size.
+*/
+
+window.addEventListener("resize", createBrackets);
+
+
+        /*
+        ============================================
+        PLAY A CLIP
+        ============================================
+        */
+
+        function playClip(clip) {
+
+    if (selectedPlayer === 1) {
+
+        video1.src = clip.video;
+        video1.load();
+
+        video1.play().catch(function() {
+            // Browser may block automatic playback.
+        });
+
+        /*
+        If we're in compare mode and Player 2 already
+        has a video, keep it playing too.
+        */
+        if (comparisonMode && video2.src) {
+            video2.play().catch(function() {});
+        }
+
+    } else {
+
+        video2.src = clip.video;
+        video2.load();
+
+        video2.play().catch(function() {});
+
+        /*
+        If Player 1 already has a video, start it too.
+        */
+        if (comparisonMode && video1.src) {
+            video1.play().catch(function() {});
+        }
+    }
+}
+
+
+        /*
+        ============================================
+        SINGLE VIDEO MODE
+        ============================================
+        */
+
+        singleButton.addEventListener("click", function() {
+
+            comparisonMode = false;
+
+            playerContainer.classList.remove("compare");
+
+            player2.style.display = "none";
+
+            singleButton.classList.add("active");
+
+            compareButton.classList.remove("active");
+
+        });
+
+
+        /*
+        ============================================
+        TWO VIDEO / COMPARE MODE
+        ============================================
+        */
+
+        compareButton.addEventListener("click", function() {
+
+    comparisonMode = true;
+
+    playerContainer.classList.add("compare");
+
+    player2.style.display = "block";
+
+    compareButton.classList.add("active");
+
+    singleButton.classList.remove("active");
+
+
+    /*
+    If both players already have videos,
+    start them together.
+    */
+
+    if (video1.src && video2.src) {
+
+        video1.currentTime = 0;
+        video2.currentTime = 0;
+
+        Promise.all([
+            video1.play(),
+            video2.play()
+        ]).catch(function() {
+            // Browser may require the user to press play.
+        });
+
+    }
+
+});
+
+
+        /*
+        ============================================
+        SELECT PLAYER 1
+        ============================================
+        */
+
+        player1Button.addEventListener("click", function() {
+
+            selectedPlayer = 1;
+
+            player1Button.classList.add("active");
+
+            player2Button.classList.remove("active");
+
+        });
+
+
+        /*
+        ============================================
+        SELECT PLAYER 2
+        ============================================
+        */
+
+        player2Button.addEventListener("click", function() {
+
+            selectedPlayer = 2;
+
+            player2Button.classList.add("active");
+
+            player1Button.classList.remove("active");
+
+        });
+
+    </script>
+
+</body>
+
+</html>
